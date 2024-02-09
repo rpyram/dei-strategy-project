@@ -1,0 +1,106 @@
+---
+title: "Filene IRT models"
+author: "Rachael Pyram"
+date: "2023-09-19"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+```
+
+## Reading in data  
+```{r}
+dat = read.csv('dicho-data.csv')
+
+```
+
+
+# The Leslie et al. model  
+This model proposes three strategies: 
++ The **resource** strategy includes preferential treatment, targeted recruitment, diversity statements, targeted training, diversity networking groups, and diversity mentoring programs  
++ The **accountability** strategy includes diversity plans, diversity performance evals, diversity positions, and grievance systems  
++ The **nondiscrimination** strategy includes merit-based decision making and general diversity training  
+
+```{r}
+##note: numbers refer to cols in the df; see sheet 'ColNumKey in 'irt-output.xlsx' for variable names + description
+  
+#F1 = resource strategy, F2 = accountability strategy, F3 = nondiscrimination strategy
+leslie = 'F1 = 1-2, 23-27, 33-36
+F2 = 3-22
+F3 = 28-32
+COV = F1*F2*F3'
+
+#using a 2 parameter model with quasi-monte carlo estimation
+library(mirt)
+les_out = mirt(data.frame(dat), leslie, "2PL", method = 'QMCEM')
+
+#model results
+  ##note: IRTpars = TRUE gives 'b' parameter instead of 'd' parameter
+coef(les_out, simplify = TRUE, IRTpars = TRUE)
+
+#fit indicies
+M2(les_out, QMC = TRUE, na.rm = TRUE)
+
+```
+  
+  
+# The Richard et al. Model  
+This model proposes two strategies:  
++ **Minority opportunity-based DEM practices**, which includes internships for racial minorities, mentoring, network groups, and career tracks  
++ **Manager accountability DEM practices**, which includes performance appraisal and bonuses tied to diversity goals  
+
+```{r}
+## one option for the richard model; retaining other option as it had better fit
+
+#F1 = minority DEM practices, F2 = manager accountability practices
+  ##note: version 1 of the Richard model 
+rich1 = 'F1 = 33-36
+F2 = 3-6 
+COV = F1*F2'
+
+#using a 2 parameter model with quasi-monte carlo estimation
+rich1_out = mirt(data.frame(dat), rich1, "2PL", method = 'QMCEM')
+
+#model results
+coef(rich1_out, simplify = TRUE, IRTpars = TRUE)
+
+#fit indicies
+M2(rich1_out, QMC = TRUE, na.rm = TRUE)
+
+```
+  
+
+## The 5-strategy solution  
+Our model proposes 5 strategies:
++ **Diversity Metrics**, which represents practices that evaluate organizational diversity goals  
++ **Goals for Diversity**, which represents the organization's goals for diversity  
++ **Institutionalizing Diversity**, which represents how the organization creates internal practices to sustain progress towards diversity goals  
++ **Talent Acquisition**, which represents recruitment and selection practices to attract and hire diverse talent  
++ **Performance Management**, which represents practices that support existing diverse talent  
+```{r}
+#F1 = diversity metrics, F2 = goals, F3 = institutionalization, F4 = talent acquisition, F5 = performance management
+five_s = 'F1 = 14-20
+F2 = 7-13
+F3 = 1-4, 21-22
+F4 = 23-30
+F5 = 5-6, 31-36
+COV = F1*F2*F3*F4*F5'
+
+#using a 2 parameter model with quasi-monte carlo estimation
+five_out = mirt(data.frame(dat), five_s, "2PL", method = 'QMCEM')
+
+#model results
+coef(five_out, simplify = TRUE, IRTpars = TRUE)
+
+#fit indicies
+M2(five_out, QMC = TRUE, na.rm = TRUE)
+
+
+```
+
+
+
+
+
