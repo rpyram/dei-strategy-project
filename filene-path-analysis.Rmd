@@ -1,0 +1,83 @@
+---
+title: "Path Analysis - Filene"
+author: "Rachael Pyram"
+date: "2023-12-08"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Read in data
+```{r}
+setwd("C:/Users/racha/Desktop/SEM")
+data = read.csv('ss-practices-outcomes-renamed.csv')
+```
+  
+
+## Path model
+```{r}
+## specifying the model
+### IVs
+  ### DM = diversity metrics, GD = goals for diversity, ID = institutionalizing diversity, TA = talent acquisition, PM = performance management
+
+### DVs
+  ### AVG_WE = work engagement, AVG_PI = personal innovation, AVG_IC = innovation climate, AVG_KT = knowledge transfer, AVG_ID = information distribution, AVG_InC = inclusion culture, AVG_SC = status conflict, AVG_OR = organizational resilience, AVG_IL = inclusive leadership
+
+path = '
+#regressions
+AVG_WE ~ DM + GD + ID + TA + PM
+AVG_PI ~ DM + GD + ID + TA + PM
+AVG_IC ~ DM + GD + ID + TA + PM
+AVG_KT ~ DM + GD + ID + TA + PM
+AVG_ID ~ DM + GD + ID + TA + PM
+AVG_InC ~ DM + GD + ID + TA + PM
+AVG_SC ~ DM + GD + ID + TA + PM
+AVG_OR ~ DM + GD + ID + TA + PM
+AVG_IL ~ DM + GD + ID + TA + PM
+'
+
+library(lavaan)
+fit_path = sem(path, data = data)
+summary(fit_path, fit.measures = TRUE, standardized = TRUE)
+
+
+## model just identified with 0 df; checking corr matrix
+```
+
+## Correlation matrix
+```{r}
+
+library(psych)
+corr = corr.test(data[6:19])
+corr
+
+## note: no significant correlations between the IVs and DVs
+## note: some IVs had r = 0 with DVs; removing those from regression equations
+
+```
+
+## Rerunning path model
+```{r}
+## removing GD from AVG_WE, ID from AVG_PI, DM from AVG_OR, and GD from AVG_IL
+
+path1 = '
+#regressions
+AVG_WE ~ DM + ID + TA + PM
+AVG_PI ~ DM + GD + TA + PM
+AVG_IC ~ DM + GD + ID + TA + PM
+AVG_KT ~ DM + GD + ID + TA + PM
+AVG_ID ~ DM + GD + ID + TA + PM
+AVG_InC ~ DM + GD + ID + TA + PM
+AVG_SC ~ DM + GD + ID + TA + PM
+AVG_OR ~ GD + ID + TA + PM
+AVG_IL ~ DM + ID + TA + PM
+'
+
+## generating fit statistics
+
+library(lavaan)
+fit_path1 = sem(path1, data = data)
+summary(fit_path1, fit.measures = TRUE, standardized = TRUE)
+```

@@ -1,0 +1,159 @@
+---
+title: "Filene-Cluster-Analysis"
+author: "Rachael Pyram"
+date: "2023-08-16"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+#Analysis prep
+```{r}
+#reading in data
+data <- read.csv("C:/Users/racha/Desktop/2021-Data.csv", header = TRUE)
+
+#isolating practice variables
+library(dplyr)
+pract <- data %>% select(
+  'CU_Name',
+  'DEI_Definition' : 'BusinessPlan_Alignment', 
+  'Performance_Eval' : 'Goal_Inclusion', 
+  'Track_Opportunity' : 'Track_Inclusion',
+  'CDO',
+  'Diversity_Committee' : 'DEI_Training',
+  'Mandatory_Training' : 'Registration_Supplier'
+  )
+
+#only looking pre-2021 (pre-coded in dataset already)
+pract_21 <- data %>% select('CU_Name','DEI_Definition_Pre2021' : 'Strategy_Low_High')
+
+#removing #NULL! responses and replacing with NA's
+pract_21 = replace (pract_21, pract_21=="#NULL!", NA)
+
+#changing from class = character to class = numeric
+pract_21[, -1] = sapply(pract_21[, -1], as.numeric)
+pract_21 = as.data.frame(pract_21) #returning to data frame format
+pract_21_NA = na.omit(pract_21)
+
+```
+
+#EFA
+```{r}
+#replicating Jo's initial 9-factor solution
+library(psych)
+fctanl9 <- fa(pract_21[, -1], nfactors = 9, rotate = "varimax", impute = "none")
+print(fctanl9)
+
+
+fctanl3 <- fa(pract_21[, -1], nfactors = 3, rotate = "varimax", impute = "none")
+print(fctanl3)
+
+fctanl2 <- fa(pract_21[, -1], nfactors = 2, rotate = "varimax", impute = "none")
+print(fctanl3)
+
+```
+
+#Applying Leslie's framework
+```{r}
+#nondiscrimination practices (includes 5 total)
+nondisc <- pract_21_NA %>% select(
+  'CU_Name',
+  'Structured_Interviews_Pre2021' : 'DEI_Training_Pre2021'
+)
+#creating mean practice score
+nondisc <- nondisc %>%
+  mutate(m_nondisc = rowMeans(nondisc[,-1], na.rm = TRUE), .after = DEI_Training_Pre2021)
+
+m_nondisc = nondisc$m_nondisc
+
+
+#resource practices (includes 14 total)
+resource <- pract_21_NA %>% select(
+  'CU_Name',
+  'DEI_Definition_Pre2021' : 'DEI_Statement_Pre2021',
+  'Diversity_Website_Pre2021' : 'HBCU_Partnerships_Pre2021',
+  'Leader_IDentification_Pre2021' : 'Registration_Supplier__Pre2021'
+)
+#creating mean practice score
+resource <- resource %>% 
+  mutate(m_resource = rowMeans(resource[, -1], na.rm = TRUE), .after = Registration_Supplier__Pre2021)
+
+m_resource = resource$m_resource
+
+#accountability practices (includes 23 total)
+accntblty <- pract_21_NA %>% select(
+  'CU_Name',
+  'DEI_StrategicPlan_Pre2021' : 'Diversity_Committee_Pre2021',
+  'Goals_Practices' : 'Strategy_Practices'
+)
+#creating mean practice score
+accntblty <- accntblty %>% 
+  mutate(m_accntblty = rowMeans(accntblty[,-1], na.rm = TRUE), .after = Strategy_Practices)
+
+m_accntblty = accntblty$m_accntblty
+
+CU_name = pract_21_NA$CU_Name
+
+
+```
+
+
+```{r}
+#computing distance
+dist_prac3 <- dist(pract_3)
+
+#hierarchical cluster
+hierc_prac <- hclust(dist_prac3)
+
+#plotting
+plot(hierc_prac, labels = pract_3$CU_name)
+
+#three cluster solution
+three_c <- cutree(hierc_prac, 3)
+table(three_c)
+
+aggregate(pract_3[, -1], list(three_c), mean)
+
+
+k3 = kmeans(scale(pract_3[,-1], center = TRUE, scale = TRUE), centers = 3, nstart = 25)
+library(factoextra)
+fviz_cluster(k3, data = pract_3[,-1])
+
+
+#looking at optimal cluster size using within cluster sums of squares, average silhouette, and gap statistics
+fviz_nbclust(pract_3[,-1], kmeans, method = "silhouette")
+fviz_nbclust(pract_3[,-1], kmeans, method = "wss")
+fviz_nbclust(pract_3[,-1], kmeans, method = "gap_stat")
+```
+
+```{r}
+
+#two cluster solution
+two_c <- cutree(hierc_prac, 2)
+table(two_c)
+
+aggregate(pract_3[, -1], list(two_c), mean)
+
+
+k2 = kmeans(scale(pract_3[,-1], center = TRUE, scale = TRUE), centers = 2, nstart = 25)
+library(factoextra)
+fviz_cluster(k2, data = pract_3[,-1])
+
+
+#looking at optimal cluster size using within cluster sums of squares, average silhouette, and gap statistics
+fviz_nbclust(pract_3[,-1], kmeans, method = "silhouette")
+fviz_nbclust(pract_3[,-1], kmeans, method = "wss")
+fviz_nbclust(pract_3[,-1], kmeans, method = "gap_stat")
+```
+
+#factor analysis
+```{r}
+corr <- round(cor(pract_21_NA[,-1]), 2)
+
+fa(corr, nfactors = 3, impute = "none")
+
+
+
+```
